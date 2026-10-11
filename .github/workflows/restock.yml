@@ -1,0 +1,36 @@
+name: beyblade-restock
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Restore last snapshot
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: beyblade-state-${{ github.run_id }}
+          restore-keys: beyblade-state-
+
+      - name: Check for restocks
+        run: python beyblade_restock.py --once
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          NEW_MODE: "instock"
+          COLLECTIONS: "beyblade"
