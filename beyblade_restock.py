@@ -59,7 +59,8 @@ def snapshot():
         ok = True
         for product in data.get("products", []):
             title = product["title"]
-            if INCLUDE and not re.search(INCLUDE, title, re.I):
+            haystack = f'{title} {product.get("vendor", "")}'
+            if INCLUDE and not re.search(INCLUDE, haystack, re.I):
                 continue
             for variant in product.get("variants", []):
                 snap[str(variant["id"])] = {
