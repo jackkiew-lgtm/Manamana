@@ -34,3 +34,4 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           NEW_MODE: "instock"
           COLLECTIONS: "beyblade,pre-order"
+          INCLUDE: "beyblade"
