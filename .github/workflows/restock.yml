@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   check:
@@ -35,3 +35,12 @@ jobs:
           NEW_MODE: "instock"
           COLLECTIONS: "beyblade,pre-order"
           INCLUDE: "beyblade"
+
+      - name: Keep-alive commit
+        run: |
+          if [ -z "$(git log -1 --since='20 days ago' --format=%H)" ]; then
+            git config user.name "keepalive-bot"
+            git config user.email "keepalive@users.noreply.github.com"
+            git commit --allow-empty -m "keepalive"
+            git push
+          fi
