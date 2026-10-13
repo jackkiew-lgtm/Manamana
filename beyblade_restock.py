@@ -3,7 +3,7 @@
 Toymana restock + new-product watcher, with on-demand Telegram commands.
 
 Alerts when a sold-out item returns, or a brand-new product is listed.
-Also answers /stock and /soldout when you message the bot.
+Also answers /stock, /soldout and /new when you message the bot.
 """
 import json
 import os
@@ -42,6 +42,7 @@ HELP = (
     "Toymana Beyblade watcher\n\n"
     "/stock     what's available right now\n"
     "/soldout   what's currently sold out\n"
+    "/new       most recently listed items\n"
     "/help      this message\n\n"
     "Alerts also arrive on their own whenever something restocks "
     "or a new item gets listed."
@@ -147,6 +148,34 @@ def stock_report(want_available):
     return head + body
 
 
+def new_report(limit=10):
+    snap = snapshot()
+    if snap is None:
+        return "Couldn't reach Toymana just then. Try again in a few minutes."
+
+    rows = sorted(snap.values(), key=lambda r: r["listed"], reverse=True)
+
+    seen, picked = set(), []
+    for r in rows:
+        if r["product"] in seen:
+            continue
+        seen.add(r["product"])
+        picked.append(r)
+        if len(picked) >= limit:
+            break
+
+    if not picked:
+        return "Nothing found."
+
+    lines = []
+    for r in picked:
+        status = "in stock" if r["available"] else "sold out"
+        lines.append(f'{r["product"]}  S${r["price"]}  [{status}]\n'
+                     f'listed {r["listed"]}\n{r["url"]}')
+
+    return f"{len(picked)} most recently listed:\n\n" + "\n\n".join(lines)
+
+
 def handle_commands(state):
     """Read any pending Telegram messages and answer recognised commands."""
     if not (TELEGRAM_TOKEN and TELEGRAM_CHAT_ID):
@@ -164,12 +193,16 @@ def handle_commands(state):
         text = (msg.get("text") or "").strip()
         if not text:
             continue
-        cmd = text.split()[0].lower().split("@")[0]
+        parts = text.split()
+        cmd = parts[0].lower().split("@")[0]
 
         if cmd in ("/stock", "/in", "/available"):
             reply(stock_report(True))
         elif cmd in ("/soldout", "/out"):
             reply(stock_report(False))
+        elif cmd == "/new":
+            n = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 10
+            reply(new_report(max(1, min(n, 25))))
         else:
             reply(HELP)
 
