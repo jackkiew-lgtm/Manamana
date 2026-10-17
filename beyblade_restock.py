@@ -25,6 +25,7 @@ DISCORD_WEBHOOK  = os.environ.get("DISCORD_WEBHOOK", "")
 TG_API           = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
 
 INTERVAL = int(os.environ.get("INTERVAL", "300"))
+RUN_SECONDS = int(os.environ.get("RUN_SECONDS", "0"))
 INCLUDE  = os.environ.get("INCLUDE", "")
 NEW_MODE = os.environ.get("NEW_MODE", "all")
 NEW_ONLY = os.environ.get("NEW_ONLY") == "1"
@@ -253,12 +254,16 @@ def check(previous):
 
 def main():
     state = check(load_state())
-    if ONCE:
-        return
-    while True:
-        time.sleep(INTERVAL + random.uniform(0, 30))
-        state = check(state)
 
+    if ONCE and not RUN_SECONDS:
+        return
+
+    deadline = time.time() + RUN_SECONDS if RUN_SECONDS else None
+    while True:
+        time.sleep(INTERVAL + random.uniform(0, 10))
+        state = check(state)
+        if deadline and time.time() >= deadline:
+            return
 
 if __name__ == "__main__":
     main()
