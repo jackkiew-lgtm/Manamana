@@ -29,6 +29,7 @@ RUN_SECONDS = int(os.environ.get("RUN_SECONDS", "0"))
 INCLUDE  = os.environ.get("INCLUDE", "")
 NEW_MODE = os.environ.get("NEW_MODE", "all")
 NEW_ONLY = os.environ.get("NEW_ONLY") == "1"
+SOLD_OUT_ALERTS = os.environ.get("SOLD_OUT_ALERTS", "1") == "1"
 
 STATE = pathlib.Path("state.json")
 ONCE  = "--once" in sys.argv
@@ -237,6 +238,8 @@ def check(previous):
                               f'listed {item["listed"]}  [{item["collection"]}]\n{item["url"]}')
             elif item["available"] and not previous[vid]["available"] and not NEW_ONLY:
                 alerts.append(f'RESTOCK\n{label(item)}  S${item["price"]}\n{item["url"]}')
+            elif not item["available"] and previous[vid]["available"] and SOLD_OUT_ALERTS:
+                alerts.append(f'SOLD OUT\n{label(item)}  S${item["price"]}\n{item["url"]}')
 
         if alerts:
             notify(f'Toymana - {len(alerts)} update(s)\n\n' + "\n\n".join(alerts))
